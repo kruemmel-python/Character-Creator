@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Character Creator Demo</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #181b22;
+      --text: #e8edf5;
+      --muted: #99a4b5;
+      --accent: #74d3ff;
+    }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at 20% 10%, #1a2130 0%, var(--bg) 45%, #0b0d12 100%);
+      color: var(--text);
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      overflow: hidden;
+    }
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+    #hud {
+      position: fixed;
+      left: 16px;
+      top: 16px;
+      z-index: 10;
+      background: color-mix(in oklab, var(--panel) 88%, transparent);
+      border: 1px solid #2a3140;
+      border-radius: 10px;
+      padding: 10px 12px;
+      max-width: min(560px, calc(100vw - 32px));
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(6px);
+    }
+    #hud h1 {
+      margin: 0 0 6px;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    #hud p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+    #status {
+      margin-top: 8px !important;
+      color: var(--text) !important;
+      font-weight: 600;
+    }
+    #controls {
+      position: fixed;
+      right: 16px;
+      top: 16px;
+      z-index: 10;
+      width: min(360px, calc(100vw - 32px));
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+      background: color-mix(in oklab, var(--panel) 88%, transparent);
+      border: 1px solid #2a3140;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(6px);
+    }
+    #controls h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      color: var(--accent);
+    }
+    .slider-row {
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #232a37;
+    }
+    .slider-row:last-child {
+      border-bottom: 0;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    .slider-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .slider-value {
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      min-width: 42px;
+      text-align: right;
+    }
+    .slider-row input[type="range"] {
+      width: 100%;
+      accent-color: #74d3ff;
+    }
+    .controls-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .controls-actions button {
+      border: 1px solid #304155;
+      background: #1f2734;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .controls-actions button:hover {
+      background: #263246;
+    }
+    .export-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .export-row select {
+      flex: 1;
+      border: 1px solid #304155;
+      background: #1f2734;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+    }
+    .export-row button {
+      border: 1px solid #304155;
+      background: #1f2734;
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .export-row button:hover {
+      background: #263246;
+    }
+    @media (max-width: 980px) {
+      #hud {
+        right: 16px;
+        max-width: unset;
+      }
+      #controls {
+        top: auto;
+        bottom: 16px;
+      }
+    }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="hud">
+    <h1>Character Creator Demo</h1>
+    <p>Diese Seite erstellt ein Human-Objekt, laedt Model + Targets und rendert es mit Three.js.</p>
+    <p>Voraussetzung: `public/data` muss vorhanden sein (z. B. aus `node_modules/makehuman-data/public/data`).</p>
+    <p>Maus: Linke Taste drehen, Mausrad zoomen, rechte Taste verschieben.</p>
+    <p id="status">Status: Initialisierung...</p>
+  </div>
+  <div id="controls" hidden>
+    <h2>Manuelle Regler</h2>
+    <div id="slider-list"></div>
+    <div class="controls-actions">
+      <button id="btn-random" type="button">Zufall</button>
+      <button id="btn-reset" type="button">Reset</button>
+      <button id="btn-tpose" type="button">T-Pose</button>
+      <button id="btn-fit" type="button">Neu zentrieren</button>
+    </div>
+    <div class="export-row">
+      <select id="export-format">
+        <option value="obj">OBJ</option>
+        <option value="fbx">FBX</option>
+      </select>
+      <button id="btn-export" type="button">Export</button>
+    </div>
+  </div>
+
+  <script src="/makehuman.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.182.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.182.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const statusEl = document.getElementById("status");
+    const controlsEl = document.getElementById("controls");
+    const sliderListEl = document.getElementById("slider-list");
+    const btnRandomEl = document.getElementById("btn-random");
+    const btnResetEl = document.getElementById("btn-reset");
+    const btnTPoseEl = document.getElementById("btn-tpose");
+    const btnFitEl = document.getElementById("btn-fit");
+    const exportFormatEl = document.getElementById("export-format");
+    const btnExportEl = document.getElementById("btn-export");
+    const setStatus = (text) => {
+      statusEl.textContent = `Status: ${text}`;
+    };
+
+    const app = document.getElementById("app");
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    app.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x10131a);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.55, 2.6);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.minDistance = 0.35;
+    controls.maxDistance = 25;
+    controls.maxPolarAngle = Math.PI * 0.98;
+    controls.target.set(0, 1.0, 0);
+    controls.update();
+
+    const hemiLight = new THREE.HemisphereLight(0xbad8ff, 0x1f2229, 0.95);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+    keyLight.position.set(2, 4, 3);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xa7c5ff, 0.45);
+    fillLight.position.set(-2, 2, -2);
+    scene.add(fillLight);
+
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(8, 80),
+      new THREE.MeshStandardMaterial({ color: 0x1a1f2b, roughness: 0.95, metalness: 0.0 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.02;
+    scene.add(floor);
+
+    const grid = new THREE.GridHelper(8, 24, 0x2d3748, 0x202631);
+    grid.position.y = -0.01;
+    scene.add(grid);
+
+    function frameCameraToObject(object3d) {
+      const box = new THREE.Box3().setFromObject(object3d);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = THREE.MathUtils.degToRad(camera.fov);
+      const distance = (maxDim / (2 * Math.tan(fov / 2))) * 1.25;
+
+      camera.position.set(
+        center.x,
+        center.y + size.y * 0.12,
+        center.z + distance
+      );
+      camera.near = Math.max(0.01, distance / 1000);
+      camera.far = Math.max(1000, distance * 30);
+      camera.updateProjectionMatrix();
+
+      controls.target.set(
+        center.x,
+        center.y + size.y * 0.08,
+        center.z
+      );
+      controls.minDistance = Math.max(0.25, size.y * 0.18);
+      controls.maxDistance = Math.max(8, size.y * 8);
+      controls.update();
+
+      return {
+        center,
+        size,
+        distance
+      };
+    }
+
+    function createModifierControls(human, onCameraRefit) {
+      const sliders = [];
+      const defs = [
+        { key: "macrodetails/Gender", label: "Gender" },
+        { key: "macrodetails/Age", label: "Age" },
+        { key: "macrodetails-universal/Muscle", label: "Muscle" },
+        { key: "macrodetails-universal/Weight", label: "Weight" },
+        { key: "macrodetails-height/Height", label: "Height" },
+        { key: "breast/BreastSize", label: "Brustgroesse" },
+        { key: "macrodetails/African", label: "African" },
+        { key: "macrodetails/Asian", label: "Asian" },
+        { key: "macrodetails/Caucasian", label: "Caucasian" }
+      ];
+
+      sliderListEl.innerHTML = "";
+
+      defs.forEach((def) => {
+        const modifier = human.modifiers && human.modifiers.children && human.modifiers.children[def.key];
+        if (!modifier) return;
+
+        if (def.key === "breast/BreastSize") {
+          modifier.max = (Number.isFinite(modifier.max) ? modifier.max : 1) * 3;
+        }
+
+        const row = document.createElement("div");
+        row.className = "slider-row";
+
+        const head = document.createElement("div");
+        head.className = "slider-head";
+
+        const label = document.createElement("span");
+        label.textContent = def.label;
+
+        const value = document.createElement("span");
+        value.className = "slider-value";
+
+        const input = document.createElement("input");
+        input.type = "range";
+        input.min = String(Number.isFinite(modifier.min) ? modifier.min : 0);
+        input.max = String(Number.isFinite(modifier.max) ? modifier.max : 1);
+        input.step = "0.001";
+
+        const sync = () => {
+          const current = Number(modifier.getValue());
+          input.value = String(current);
+          value.textContent = current.toFixed(3);
+        };
+
+        input.addEventListener("input", () => {
+          const v = Number(input.value);
+          modifier.setValue(v);
+          human.targets.lastBake = 0;
+          sync();
+        });
+
+        head.appendChild(label);
+        head.appendChild(value);
+        row.appendChild(head);
+        row.appendChild(input);
+        sliderListEl.appendChild(row);
+
+        sliders.push(sync);
+        sync();
+      });
+
+      const toProxyLabel = (proxyKey) => {
+        const parts = String(proxyKey).split("/");
+        const raw = parts.length > 1 ? parts[1] : String(proxyKey).replace(/\.json$/i, "");
+        return raw.replace(/[_-]+/g, " ").trim();
+      };
+      const isLongAlpha7Hair = (proxyKey) =>
+        String(proxyKey || "").toLowerCase().startsWith("hair/long_alpha7/long_alpha7.json");
+      const refreshProxyState = () => {
+        if (human.proxies && typeof human.proxies.onElementsNeedUpdate === "function") {
+          human.proxies.onElementsNeedUpdate();
+        }
+        if (human.proxies && typeof human.proxies.updateFaceMask === "function") {
+          const hasVisibleProxy = Array.isArray(human.proxies.children) &&
+            human.proxies.children.some((p) => p && p.visible && p.mesh);
+          human.proxies.updateFaceMask(hasVisibleProxy ? 1 : 3);
+        }
+        onCameraRefit();
+      };
+
+      const hairOptions = Array.isArray(human._availableHairProxies) ? human._availableHairProxies.slice() : [];
+      if (hairOptions.length > 0) {
+        const row = document.createElement("div");
+        row.className = "slider-row";
+
+        const head = document.createElement("div");
+        head.className = "slider-head";
+
+        const label = document.createElement("span");
+        label.textContent = "Haare";
+
+        const value = document.createElement("span");
+        value.className = "slider-value";
+        value.style.minWidth = "120px";
+        value.style.textAlign = "right";
+
+        const input = document.createElement("input");
+        input.type = "range";
+        input.min = "0";
+        input.max = String(hairOptions.length);
+        input.step = "1";
+        input.value = "0";
+
+        let currentHairKey = null;
+        let hairRequestId = 0;
+
+        const syncHairLabel = () => {
+          const idx = Number(input.value);
+          value.textContent = idx === 0 ? "Keine" : toProxyLabel(hairOptions[idx - 1]);
+        };
+
+        const applyHairIndex = async (idx) => {
+          const requestId = ++hairRequestId;
+          const nextHairKey = idx > 0 ? hairOptions[idx - 1] : null;
+          if (nextHairKey === currentHairKey) return;
+
+          if (currentHairKey) {
+            await human.proxies.toggleProxy(currentHairKey, false);
+          }
+          if (requestId !== hairRequestId) return;
+
+          currentHairKey = null;
+          if (nextHairKey) {
+            await human.proxies.toggleProxy(nextHairKey, true);
+            if (requestId !== hairRequestId) {
+              await human.proxies.toggleProxy(nextHairKey, false);
+              return;
+            }
+            currentHairKey = nextHairKey;
+
+            const proxy = (human.proxies && Array.isArray(human.proxies.children))
+              ? human.proxies.children.find((p) => p && p.key === nextHairKey)
+              : null;
+            if (proxy) {
+              proxy.extraGeometryScaling = isLongAlpha7Hair(nextHairKey)
+                ? [1.015, 1.015, 1.015]
+                : [1.0, 1.0, 1.0];
+              tuneHairProxyAppearance(proxy, nextHairKey);
+            }
+          }
+          refreshProxyState();
+        };
+
+        input.addEventListener("input", async () => {
+          syncHairLabel();
+          const idx = Number(input.value);
+          setStatus("Lade Haare ...");
+          try {
+            await applyHairIndex(idx);
+            setStatus("Fertig");
+          } catch (err) {
+            console.error(err);
+            setStatus(`Haare-Fehler: ${err.message}`);
+          }
+        });
+
+        head.appendChild(label);
+        head.appendChild(value);
+        row.appendChild(head);
+        row.appendChild(input);
+        sliderListEl.appendChild(row);
+        syncHairLabel();
+      }
+
+      const clothingOptions = Array.isArray(human._availableClothingProxies) ? human._availableClothingProxies.slice() : [];
+      if (clothingOptions.length > 0) {
+        const row = document.createElement("div");
+        row.className = "slider-row";
+
+        const head = document.createElement("div");
+        head.className = "slider-head";
+
+        const label = document.createElement("span");
+        label.textContent = "Kleidung";
+
+        const value = document.createElement("span");
+        value.className = "slider-value";
+        value.style.minWidth = "120px";
+        value.style.textAlign = "right";
+
+        const input = document.createElement("input");
+        input.type = "range";
+        input.min = "0";
+        input.max = String(clothingOptions.length);
+        input.step = "1";
+        input.value = "0";
+
+        let currentClothingKey = null;
+        let clothingRequestId = 0;
+
+        const syncClothingLabel = () => {
+          const idx = Number(input.value);
+          value.textContent = idx === 0 ? "Keine" : toProxyLabel(clothingOptions[idx - 1]);
+        };
+
+        const applyClothingIndex = async (idx) => {
+          const requestId = ++clothingRequestId;
+          const nextClothingKey = idx > 0 ? clothingOptions[idx - 1] : null;
+          if (nextClothingKey === currentClothingKey) return;
+
+          if (currentClothingKey) {
+            await human.proxies.toggleProxy(currentClothingKey, false);
+          }
+          if (requestId !== clothingRequestId) return;
+
+          currentClothingKey = null;
+          if (nextClothingKey) {
+            await human.proxies.toggleProxy(nextClothingKey, true);
+            if (requestId !== clothingRequestId) {
+              await human.proxies.toggleProxy(nextClothingKey, false);
+              return;
+            }
+            currentClothingKey = nextClothingKey;
+          }
+
+          refreshProxyState();
+        };
+
+        input.addEventListener("input", async () => {
+          syncClothingLabel();
+          const idx = Number(input.value);
+          setStatus("Lade Kleidung ...");
+          try {
+            await applyClothingIndex(idx);
+            setStatus("Fertig");
+          } catch (err) {
+            console.error(err);
+            setStatus(`Kleidungs-Fehler: ${err.message}`);
+          }
+        });
+
+        head.appendChild(label);
+        head.appendChild(value);
+        row.appendChild(head);
+        row.appendChild(input);
+        sliderListEl.appendChild(row);
+        syncClothingLabel();
+      }
+
+      const syncAll = () => sliders.forEach((sync) => sync());
+
+      btnRandomEl.onclick = () => {
+        human.modifiers.randomize();
+        human.targets.lastBake = 0;
+        syncAll();
+      };
+
+      btnResetEl.onclick = () => {
+        human.modifiers.reset();
+        human.targets.lastBake = 0;
+        syncAll();
+      };
+
+      btnFitEl.onclick = () => {
+        onCameraRefit();
+      };
+
+      btnTPoseEl.onclick = () => {
+        human.setPose();
+        human.targets.lastBake = 0;
+        onCameraRefit();
+        setStatus("T-Pose aktiv");
+      };
+
+      btnExportEl.onclick = () => {
+        try {
+          const result = exportHuman(human, exportFormatEl.value);
+          setStatus(result);
+        } catch (err) {
+          console.error(err);
+          setStatus(`Export-Fehler: ${err.message}`);
+        }
+      };
+
+      controlsEl.hidden = false;
+    }
+
+    function getFrameTarget(humanLike) {
+      return humanLike && humanLike.mesh ? humanLike.mesh : humanLike;
+    }
+
+    function getMaterialList(materialLike) {
+      if (!materialLike) return [];
+      if (Array.isArray(materialLike)) return materialLike;
+      if (Array.isArray(materialLike.materials)) return materialLike.materials;
+      return [materialLike];
+    }
+
+    function tuneHairProxyAppearance(proxy, proxyKey = "") {
+      if (!proxy || !proxy.mesh) return;
+      const normalizedKey = String(proxyKey || proxy.key || "").toLowerCase();
+      const isLongAlpha7 = normalizedKey.startsWith("hair/long_alpha7/long_alpha7.json");
+      const alphaCutoff = isLongAlpha7 ? 0.02 : 0.08;
+      const materials = getMaterialList(proxy.mesh.material);
+      for (let i = 0; i < materials.length; i++) {
+        const mat = materials[i];
+        if (!mat) continue;
+
+        // Hair cards should use a mild cutout; aggressive alpha test creates scalp holes.
+        if (mat.alphaMap || mat.transparent || (Number.isFinite(mat.opacity) && mat.opacity < 1)) {
+          mat.alphaTest = alphaCutoff;
+          mat.transparent = isLongAlpha7;
+          mat.opacity = 1;
+          mat.depthWrite = !isLongAlpha7;
+          mat.depthTest = true;
+          if (isLongAlpha7 && "alphaToCoverage" in mat) {
+            mat.alphaToCoverage = true;
+          }
+        }
+
+        mat.side = THREE.DoubleSide;
+        mat.needsUpdate = true;
+      }
+    }
+
+    function downloadFile(filename, content, mimeType = "text/plain;charset=utf-8") {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function timestampTag() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    }
+
+    function extractMeshDataForExport(mesh, { bodyOnly = false } = {}) {
+      if (!mesh || !mesh.geometry) {
+        throw new Error("Kein Mesh fuer Export verfuegbar.");
+      }
+
+      const geometry = mesh.geometry;
+      const legacyGeometry = geometry._legacyGeometry || geometry;
+      const legacyVertices = legacyGeometry.vertices;
+      const legacyFaces = legacyGeometry.faces;
+
+      if (Array.isArray(legacyVertices) && Array.isArray(legacyFaces) && legacyVertices.length > 0 && legacyFaces.length > 0) {
+        let facesForExport = legacyFaces;
+        if (bodyOnly) {
+          const bodyFaces = legacyFaces.filter((f) => (Number.isFinite(f.materialIndex) ? f.materialIndex : 0) === 0);
+          if (bodyFaces.length > 0) {
+            facesForExport = bodyFaces;
+          }
+        }
+
+        const usedVertexIds = new Set();
+        for (let i = 0; i < facesForExport.length; i++) {
+          const f = facesForExport[i];
+          usedVertexIds.add(f.a);
+          usedVertexIds.add(f.b);
+          usedVertexIds.add(f.c);
+        }
+
+        const sortedVertexIds = Array.from(usedVertexIds).sort((a, b) => a - b);
+        const oldToNewIndex = new Map();
+        const vertices = [];
+        for (let i = 0; i < sortedVertexIds.length; i++) {
+          const oldIndex = sortedVertexIds[i];
+          oldToNewIndex.set(oldIndex, i);
+          const v = legacyVertices[oldIndex];
+          vertices.push([v.x, v.y, v.z]);
+        }
+
+        const faces = facesForExport.map((f) => [
+          oldToNewIndex.get(f.a),
+          oldToNewIndex.get(f.b),
+          oldToNewIndex.get(f.c)
+        ]);
+
+        return { vertices, faces };
+      }
+
+      if (typeof geometry.getAttribute !== "function") {
+        throw new Error("Geometrieformat wird fuer Export nicht unterstuetzt.");
+      }
+
+      const position = geometry.getAttribute("position");
+      if (!position) {
+        throw new Error("Position-Attribut fehlt.");
+      }
+
+      const vertices = [];
+      for (let i = 0; i < position.count; i++) {
+        vertices.push([position.getX(i), position.getY(i), position.getZ(i)]);
+      }
+
+      const faces = [];
+      const indexAttr = geometry.getIndex();
+      if (indexAttr) {
+        for (let i = 0; i < indexAttr.count; i += 3) {
+          faces.push([indexAttr.getX(i), indexAttr.getX(i + 1), indexAttr.getX(i + 2)]);
+        }
+      } else {
+        for (let i = 0; i < position.count; i += 3) {
+          faces.push([i, i + 1, i + 2]);
+        }
+      }
+
+      return { vertices, faces };
+    }
+
+    function collectExportMeshes(human) {
+      const meshes = [];
+
+      if (human && human.mesh) {
+        const body = extractMeshDataForExport(human.mesh, { bodyOnly: true });
+        if (body.vertices.length > 0 && body.faces.length > 0) {
+          meshes.push({ name: "HumanBody", vertices: body.vertices, faces: body.faces });
+        }
+      }
+
+      const proxyChildren = human && human.proxies && Array.isArray(human.proxies.children)
+        ? human.proxies.children
+        : [];
+
+      for (let i = 0; i < proxyChildren.length; i++) {
+        const proxy = proxyChildren[i];
+        if (!proxy || !proxy.visible || !proxy.mesh) continue;
+
+        try {
+          const data = extractMeshDataForExport(proxy.mesh, { bodyOnly: false });
+          if (data.vertices.length > 0 && data.faces.length > 0) {
+            meshes.push({
+              name: proxy.name || proxy.key || `Proxy_${i}`,
+              vertices: data.vertices,
+              faces: data.faces
+            });
+          }
+        } catch (err) {
+          console.warn("Proxy konnte nicht exportiert werden:", proxy && (proxy.key || proxy.name), err);
+        }
+      }
+
+      return meshes;
+    }
+
+    function mergeExportMeshes(meshes) {
+      const vertices = [];
+      const faces = [];
+      let vertexOffset = 0;
+
+      for (let i = 0; i < meshes.length; i++) {
+        const m = meshes[i];
+        for (let j = 0; j < m.vertices.length; j++) {
+          vertices.push(m.vertices[j]);
+        }
+        for (let j = 0; j < m.faces.length; j++) {
+          const f = m.faces[j];
+          faces.push([f[0] + vertexOffset, f[1] + vertexOffset, f[2] + vertexOffset]);
+        }
+        vertexOffset += m.vertices.length;
+      }
+
+      return { vertices, faces };
+    }
+
+    function buildObjFromMeshes(meshes) {
+      const lines = [
+        `# Exported from Character Creator on ${new Date().toISOString()}`
+      ];
+      let vertexOffset = 1;
+
+      for (let i = 0; i < meshes.length; i++) {
+        const mesh = meshes[i];
+        const name = String(mesh.name || `Mesh_${i}`).replace(/\s+/g, "_");
+        lines.push(`o ${name}`);
+
+        for (let j = 0; j < mesh.vertices.length; j++) {
+          const v = mesh.vertices[j];
+          lines.push(`v ${v[0]} ${v[1]} ${v[2]}`);
+        }
+
+        for (let j = 0; j < mesh.faces.length; j++) {
+          const f = mesh.faces[j];
+          lines.push(`f ${f[0] + vertexOffset} ${f[1] + vertexOffset} ${f[2] + vertexOffset}`);
+        }
+
+        vertexOffset += mesh.vertices.length;
+      }
+
+      return lines.join("\n") + "\n";
+    }
+
+    function buildAsciiFbx(human) {
+      const meshes = collectExportMeshes(human);
+      const { vertices, faces } = mergeExportMeshes(meshes);
+      const vertexValues = [];
+      for (let i = 0; i < vertices.length; i++) {
+        const v = vertices[i];
+        vertexValues.push(v[0], v[1], v[2]);
+      }
+
+      const polygonValues = [];
+      for (let i = 0; i < faces.length; i++) {
+        const f = faces[i];
+        polygonValues.push(f[0], f[1], -f[2] - 1);
+      }
+
+      const formatNum = (n) => (Number.isFinite(n) ? Number(n.toFixed(6)) : 0);
+      const vertexStr = vertexValues.map(formatNum).join(",");
+      const polygonStr = polygonValues.join(",");
+      return `; FBX 7.3.0 project file
+FBXHeaderExtension:  {
+\tFBXHeaderVersion: 1003
+\tFBXVersion: 7300
+\tCreator: "Character Creator demo exporter"
+}
+GlobalSettings:  {
+\tVersion: 1000
+\tProperties70:  {
+\t\tP: "UpAxis", "int", "Integer", "",1
+\t\tP: "UpAxisSign", "int", "Integer", "",1
+\t\tP: "FrontAxis", "int", "Integer", "",2
+\t\tP: "FrontAxisSign", "int", "Integer", "",1
+\t\tP: "CoordAxis", "int", "Integer", "",0
+\t\tP: "CoordAxisSign", "int", "Integer", "",1
+\t\tP: "UnitScaleFactor", "double", "Number", "",1
+\t\tP: "OriginalUnitScaleFactor", "double", "Number", "",1
+\t}
+}
+Documents:  {
+\tCount: 1
+\tDocument: 1, "Scene", "Scene" {
+\t\tProperties70:  {
+\t\t\tP: "SourceObject", "object", "", ""
+\t\t\tP: "ActiveAnimStackName", "KString", "", "", ""
+\t\t}
+\t\tRootNode: 0
+\t}
+}
+References:  {
+}
+Definitions:  {
+\tVersion: 100
+\tCount: 3
+\tObjectType: "Model" {
+\t\tCount: 1
+\t}
+\tObjectType: "Geometry" {
+\t\tCount: 1
+\t}
+\tObjectType: "Material" {
+\t\tCount: 1
+\t}
+}
+Objects:  {
+\tGeometry: 1000, "Geometry::HumanGeometry", "Mesh" {
+\t\tGeometryVersion: 124
+\t\tVertices: *${vertexValues.length} {
+\t\t\ta: ${vertexStr}
+\t\t}
+\t\tPolygonVertexIndex: *${polygonValues.length} {
+\t\t\ta: ${polygonStr}
+\t\t}
+\t\tLayerElementMaterial: 0 {
+\t\t\tVersion: 101
+\t\t\tName: ""
+\t\t\tMappingInformationType: "AllSame"
+\t\t\tReferenceInformationType: "IndexToDirect"
+\t\t\tMaterials: *1 {
+\t\t\t\ta: 0
+\t\t\t}
+\t\t}
+\t\tLayer: 0 {
+\t\t\tVersion: 100
+\t\t\tLayerElement:  {
+\t\t\t\tType: "LayerElementMaterial"
+\t\t\t\tTypedIndex: 0
+\t\t\t}
+\t\t}
+\t}
+\tModel: 1001, "Model::HumanMesh", "Mesh" {
+\t\tVersion: 232
+\t\tProperties70:  {
+\t\t\tP: "DefaultAttributeIndex", "int", "Integer", "",0
+\t\t}
+\t\tShading: T
+\t\tCulling: "CullingOff"
+\t}
+\tMaterial: 1002, "Material::HumanMaterial", "" {
+\t\tVersion: 102
+\t\tShadingModel: "phong"
+\t\tMultiLayer: 0
+\t\tProperties70:  {
+\t\t\tP: "DiffuseColor", "Color", "", "A",0.8,0.8,0.8
+\t\t}
+\t}
+}
+Connections:  {
+\tC: "OO",1001,0
+\tC: "OO",1000,1001
+\tC: "OO",1002,1001
+}
+Takes:  {
+\tCurrent: ""
+}
+`;
+    }
+
+    function exportHuman(human, format) {
+      if (!human) {
+        throw new Error("Human ist noch nicht geladen.");
+      }
+
+      if (typeof human.onBeforeRender === "function") {
+        human.onBeforeRender();
+      }
+
+      const suffix = timestampTag();
+      const exportMeshes = collectExportMeshes(human);
+      if (exportMeshes.length === 0) {
+        throw new Error("Keine Export-Meshes gefunden.");
+      }
+
+      if (format === "obj") {
+        const obj = buildObjFromMeshes(exportMeshes);
+        downloadFile(`makehuman-${suffix}.obj`, obj, "text/plain;charset=utf-8");
+        return "OBJ exportiert";
+      }
+
+      if (format === "fbx") {
+        const fbx = buildAsciiFbx(human);
+        downloadFile(`makehuman-${suffix}.fbx`, fbx, "application/octet-stream");
+        return "FBX exportiert";
+      }
+
+      throw new Error(`Unbekanntes Exportformat: ${format}`);
+    }
+
+    async function createHuman() {
+      if (!window.makehuman || !window.makehuman.Human) {
+        throw new Error("makehuman UMD bundle nicht gefunden. Erwartet: window.makehuman.Human");
+      }
+
+      setStatus("Lade Konfiguration /data/resources.json ...");
+      const configResponse = await fetch("/data/resources.json");
+      if (!configResponse.ok) {
+        throw new Error(`Konnte /data/resources.json nicht laden (${configResponse.status})`);
+      }
+
+      const config = await configResponse.json();
+      const availableHairProxies = (Array.isArray(config.proxies) ? config.proxies : [])
+        .filter((p) => typeof p === "string" && p.startsWith("hair/"))
+        .filter((p) => !/beard|moustache/i.test(p))
+        .sort((a, b) => a.localeCompare(b));
+      const availableClothingProxies = (Array.isArray(config.proxies) ? config.proxies : [])
+        .filter((p) => typeof p === "string" && p.startsWith("clothes/"))
+        .sort((a, b) => a.localeCompare(b));
+      config.baseUrl = "/data/";
+      config.proxies = [];
+
+      setStatus("Erzeuge Human ...");
+      const human = new window.makehuman.Human(config);
+      human.minUpdateInterval = 16;
+      human._availableHairProxies = availableHairProxies;
+      human._availableClothingProxies = availableClothingProxies;
+
+      setStatus("Lade Model ...");
+      await human.loadModel();
+
+      setStatus("Lade Targets ...");
+      await human.loadTargets();
+
+      human.setPose("standing04");
+      scene.add(human);
+      setStatus("Fertig");
+
+      return human;
+    }
+
+    let human = null;
+    let humanFrame = null;
+    try {
+      human = await createHuman();
+      humanFrame = frameCameraToObject(getFrameTarget(human));
+      createModifierControls(human, () => {
+        humanFrame = frameCameraToObject(getFrameTarget(human));
+      });
+    } catch (err) {
+      console.error(err);
+      setStatus(`Fehler: ${err.message}`);
+    }
+
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      clock.getElapsedTime();
+
+      if (human) {
+        if (typeof human.onBeforeRender === "function") {
+          human.onBeforeRender();
+        }
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+      if (human && typeof human.onAfterRender === "function") {
+        human.onAfterRender();
+      }
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
