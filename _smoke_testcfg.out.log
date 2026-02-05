@@ -1,0 +1,18 @@
+asset [1m[32mmakehuman.test.js[39m[22m 8.35 MiB [1m[32m[emitted][39m[22m (name: test)
+asset [1m[32mposes-data.makehuman.test.js[39m[22m 541 KiB [1m[32m[emitted][39m[22m (name: poses-data) (id hint: vendors)
+asset [1m[32mindex.html[39m[22m 533 bytes [1m[32m[emitted][39m[22m [from: test/index.html] [1m[32m[copied][39m[22m
+runtime modules 32.4 KiB 16 modules
+orphan modules 616 KiB [1m[33m[orphan][39m[22m 1 module
+modules by path [1m./node_modules/[39m[22m 3.4 MiB
+  javascript modules 2.7 MiB 109 modules
+  json modules 722 KiB 7 modules
+modules by path [1m./test/[39m[22m 51.1 KiB
+  [1m./test/index.js[39m[22m 272 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  [1m./test/mocha/human_spec.js[39m[22m 3.66 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 7 modules
+modules by path [1m./src/js/[39m[22m 159 KiB
+  modules by path [1m./src/js/human/*.js[39m[22m 133 KiB 6 modules
+  modules by path [1m./src/js/helpers/*.js[39m[22m 26.7 KiB 3 modules
+[1m./util.inspect (ignored)[39m[22m 15 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mutil (ignored)[39m[22m 15 bytes [1m[33m[optional][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.105.0 compiled [1m[32msuccessfully[39m[22m in 3719 ms

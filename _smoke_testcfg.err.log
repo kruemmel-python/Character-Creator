@@ -1,0 +1,7 @@
+<i> [webpack-dev-server] Project is running at:
+<i> [webpack-dev-server] Loopback: [36mhttp://localhost:8081/[39m, [36mhttp://[::1]:8081/[39m
+<i> [webpack-dev-server] On Your Network (IPv4): [36mhttp://192.168.178.62:8081/[39m
+<i> [webpack-dev-server] On Your Network (IPv6): [36mhttp://[fdbb:862e:c2a8:0:2177:e541:bb60:4db8]:8081/[39m
+<i> [webpack-dev-server] Content not from webpack is served from '[36mD:\makehuman-js-master\build, D:\makehuman-js-master\node_modules\makehuman-data\public[39m' directory
+<i> [webpack-dev-middleware] wait until bundle finished: /index.html
+^C

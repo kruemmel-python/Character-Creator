@@ -1,0 +1,58 @@
+{
+  "name": "character-creator",
+  "version": "0.1.2",
+  "description": "Character Creator fork maintained by Ralf Krümmel",
+  "main": "src/bundle.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kruemmel-python/Character-Creator.git"
+  },
+  "homepage": "https://github.com/kruemmel-python/Character-Creator",
+  "author": "Ralf Krümmel (https://github.com/kruemmel-python)",
+  "license": "AGPL-3.0-or-later",
+  "keywords": [
+    "3d",
+    "human",
+    "model",
+    "characters",
+    "makehuman"
+  ],
+  "scripts": {
+    "start": "webpack serve --mode development --progress",
+    "start_windows": "webpack serve --mode development --progress",
+    "try_release": "webpack --mode production --progress",
+    "watch": "webpack --mode development --progress --watch",
+    "build": "webpack --mode development --progress",
+    "build:debug": "webpack --mode development --stats-error-details",
+    "release": "webpack --mode production --progress",
+    "release_windows": "webpack --mode production --progress",
+    "test": "webpack serve --mode development --config webpack.test.config.js --open",
+    "test_windows": "webpack serve --mode development --config webpack.test.config.js --open"
+  },
+  "dependencies": {
+    "d3-random": "^0.2.1",
+    "lodash": "^4.17.21",
+    "makehuman-data": "0.0.2",
+    "qs": "^6.14.0",
+    "three": "0.182.0",
+    "three-stdlib": "^2.36.1",
+    "tween": "^0.9.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.3",
+    "@babel/preset-env": "^7.28.3",
+    "babel-loader": "^10.0.0",
+    "bignumber": "^1.1.0",
+    "bignumber.js": "^2.3.0",
+    "chai": "^4.5.0",
+    "chai-as-promised": "^7.1.2",
+    "chai-bignumber": "^1.0.0",
+    "chai-things": "^0.2.0",
+    "copy-webpack-plugin": "^13.0.1",
+    "jstat": "^1.5.3",
+    "mocha": "11.3.0",
+    "webpack": "^5.105.0",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.3"
+  }
+}
