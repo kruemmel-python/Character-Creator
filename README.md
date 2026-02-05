@@ -33,6 +33,12 @@ Lizenz fuer diesen Fork-Code: **AGPL-3.0-or-later**.
 Die Daten/Modelle unter `makehuman-data` bleiben unter deren eigener Lizenz.
 Volltext der Lizenz: `LICENSE`.
 
+
+https://github.com/user-attachments/assets/de13f133-6003-4c4c-8fa6-ffa0ace7d3df
+
+
+
+
 Weitere Lizenz- und Attribution-Hinweise:
 
 - `NOTICE.md`
